@@ -1,0 +1,8 @@
+# Entorno virtual
+venv/
+
+# Archivos temporales que Python genera al ejecutar (bytecode compilado)
+__pycache__/
+*.pyc
+
+AGENTE.md

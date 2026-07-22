@@ -15,6 +15,7 @@ class Agente:
         creencia_inicial_amenaza,
         tasa_aprendizaje_amenaza,
         tasa_aprendizaje_seguridad,
+        tolerancia_a_incertidumbre,
     ):
         # Estado que EVOLUCIONA con la experiencia (arranca en el valor inicial).
         self.creencia_amenaza = creencia_inicial_amenaza
@@ -22,6 +23,7 @@ class Agente:
         # Parámetros FIJOS que definen la "personalidad" del agente.
         self.tasa_aprendizaje_amenaza = tasa_aprendizaje_amenaza
         self.tasa_aprendizaje_seguridad = tasa_aprendizaje_seguridad
+        self.tolerancia_a_incertidumbre = tolerancia_a_incertidumbre
 
     def actualizar_creencia(self, observacion):
         """Ajusta la creencia de amenaza a partir de una observación."""
@@ -40,9 +42,21 @@ class Agente:
 
         return self.creencia_amenaza
 
+    def decidir(self):
+        """Decide si explorar o evitar según el nivel de miedo actual.
+
+        Regla de umbral (Opción A): si el miedo (creencia_amenaza) supera lo
+        que el agente está dispuesto a tolerar (tolerancia_a_incertidumbre),
+        se aleja (evita). Si no, se acerca (explora).
+        """
+        if self.creencia_amenaza > self.tolerancia_a_incertidumbre:
+            return "evitar"
+        else:
+            return "explorar"
+
 
 # ---------------------------------------------------------------------------
-# Simulación de prueba de la Fase 1: ver al agente sano aprender.
+# Simulación de prueba de la Fase 2: el agente sano aprende Y decide.
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     # Generador de números aleatorios con "semilla" fija: garantiza que la
@@ -56,10 +70,17 @@ if __name__ == "__main__":
         creencia_inicial_amenaza=0.5,      # Prior neutral: "no sé, 50/50".
         tasa_aprendizaje_amenaza=0.3,      # Aprende el peligro a velocidad moderada.
         tasa_aprendizaje_seguridad=0.3,    # Aprende la seguridad a la MISMA velocidad (agente equilibrado).
+        tolerancia_a_incertidumbre=0.5,    # Aguanta hasta 50% de miedo antes de evitar (valiente y equilibrado).
     )
 
     for ensayo in range(numero_de_ensayos):
-        # El mundo lanza una "moneda cargada": peligro (1) con probabilidad 0.2.
+        # 1. El robot decide con lo que cree AHORA (antes de ver qué había).
+        decision = agente_sano.decidir()
+        # 2. El mundo revela lo que había: peligro (1) con probabilidad 0.2.
         observacion = 1 if generador.random() < peligrosidad_real else 0
+        # 3. El robot aprende de lo que vio y ajusta su termómetro.
         creencia = agente_sano.actualizar_creencia(observacion)
-        print(f"Ensayo {ensayo + 1:3d} | observacion: {observacion} | creencia de amenaza: {creencia:.3f}")
+        print(
+            f"Ensayo {ensayo + 1:3d} | decision: {decision:8s} | "
+            f"observacion: {observacion} | creencia de amenaza: {creencia:.3f}"
+        )

@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Agente:
@@ -136,3 +137,32 @@ if __name__ == "__main__":
 
     print(f"\nMarcador final del agente sano: {marcador:+.1f}")
     print(f"Ensayos guardados en el historial: {len(historial_creencia)}")
+
+    # -----------------------------------------------------------------------
+    # Gráficas: dibujamos el historial guardado con matplotlib.
+    # -----------------------------------------------------------------------
+    ensayos = range(1, numero_de_ensayos + 1)   # eje horizontal: 1, 2, ..., 100
+
+    # Una figura con 2 paneles apilados (2 filas, 1 columna).
+    figura, (panel_miedo, panel_marcador) = plt.subplots(2, 1, figsize=(10, 8))
+
+    # Panel de arriba: el termómetro del miedo (la creencia) ensayo a ensayo.
+    panel_miedo.plot(ensayos, historial_creencia, color="steelblue", label="Creencia de amenaza")
+    panel_miedo.axhline(peligrosidad_real, color="gray", linestyle="--", label="Peligrosidad real (0.2)")
+    panel_miedo.set_title("Agente sano: cómo evoluciona el miedo")
+    panel_miedo.set_ylabel("Creencia de amenaza (0 a 1)")
+    panel_miedo.set_ylim(0, 1)
+    panel_miedo.legend()
+    panel_miedo.grid(True, alpha=0.3)
+
+    # Panel de abajo: el marcador acumulado ensayo a ensayo.
+    panel_marcador.plot(ensayos, historial_marcador, color="seagreen")
+    panel_marcador.axhline(0, color="gray", linestyle="--")   # línea de referencia en cero
+    panel_marcador.set_title("Agente sano: marcador acumulado")
+    panel_marcador.set_xlabel("Ensayo")
+    panel_marcador.set_ylabel("Puntaje acumulado")
+    panel_marcador.grid(True, alpha=0.3)
+
+    figura.tight_layout()                 # acomoda los paneles para que no se encimen
+    figura.savefig("agente_sano.png", dpi=120)
+    print("Grafica guardada en: agente_sano.png")

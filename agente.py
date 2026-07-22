@@ -44,17 +44,32 @@ class Agente:
 
         return self.creencia_amenaza
 
-    def decidir(self):
-        """Decide si explorar o evitar según el nivel de miedo actual.
+    def decidir(self, recompensa_por_explorar_seguro, castigo_por_explorar_peligro):
+        """Decide si explorar o evitar comparando el valor esperado de cada opción.
 
-        Regla de umbral (Opción A): si el miedo (creencia_amenaza) supera lo
-        que el agente está dispuesto a tolerar (tolerancia_a_incertidumbre),
-        se aleja (evita). Si no, se acerca (explora).
+        Regla de valor esperado (Opción B): el agente calcula cuánto le
+        "conviene" en promedio explorar y lo compara con lo que le cuesta
+        evitar. Elige la opción de mayor valor.
+
+        La tolerancia a la incertidumbre entra como un "factor de pesimismo":
+        cuanto MENOS tolerante es el agente, MÁS grande siente el peligro.
         """
-        if self.creencia_amenaza > self.tolerancia_a_incertidumbre:
-            return "evitar"
-        else:
+        # Factor de pesimismo = piso de 1 (ver el peligro normal) + lo intolerante que es.
+        factor_pesimismo = 2 - self.tolerancia_a_incertidumbre
+        castigo_sentido = castigo_por_explorar_peligro * factor_pesimismo
+
+        # Valor de explorar: promedio ponderado de sus dos finales (seguro vs. peligro).
+        valor_explorar = (
+            (1 - self.creencia_amenaza) * recompensa_por_explorar_seguro
+            + self.creencia_amenaza * castigo_sentido
+        )
+        # Valor de evitar: siempre pierde su costo de evitación, pase lo que pase.
+        valor_evitar = -self.costo_de_evitacion
+
+        if valor_explorar >= valor_evitar:
             return "explorar"
+        else:
+            return "evitar"
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +99,10 @@ if __name__ == "__main__":
 
     for ensayo in range(numero_de_ensayos):
         # 1. El robot decide con lo que cree AHORA (antes de ver qué había).
-        decision = agente_sano.decidir()
+        decision = agente_sano.decidir(
+            recompensa_por_explorar_seguro,
+            castigo_por_explorar_peligro,
+        )
         # 2. El mundo revela lo que había: peligro (1) con probabilidad 0.2.
         observacion = 1 if generador.random() < peligrosidad_real else 0
         # 3. El robot aprende de lo que vio y ajusta su termómetro.

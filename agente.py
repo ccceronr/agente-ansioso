@@ -73,7 +73,7 @@ class Agente:
 
 
 # ---------------------------------------------------------------------------
-# Simulación de prueba de la Fase 2: el agente sano aprende Y decide.
+# Simulación de la Fase 3: el agente sano aprende, decide Y guarda su historial.
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     # Generador de números aleatorios con "semilla" fija: garantiza que la
@@ -97,6 +97,11 @@ if __name__ == "__main__":
 
     marcador = 0.0    # El "puntaje" acumulado del robot; empieza en cero.
 
+    # Cuadernos (listas) vacíos para anotar el historial, un renglón por ensayo.
+    historial_creencia = []     # el termómetro del miedo en cada ensayo
+    historial_decision = []     # "explorar" o "evitar" en cada ensayo
+    historial_marcador = []     # el puntaje acumulado en cada ensayo
+
     for ensayo in range(numero_de_ensayos):
         # 1. El robot decide con lo que cree AHORA (antes de ver qué había).
         decision = agente_sano.decidir(
@@ -118,6 +123,11 @@ if __name__ == "__main__":
 
         marcador = marcador + puntos
 
+        # 5. Anotamos en los cuadernos los datos de este ensayo (para graficar luego).
+        historial_creencia.append(creencia)
+        historial_decision.append(decision)
+        historial_marcador.append(marcador)
+
         print(
             f"Ensayo {ensayo + 1:3d} | decision: {decision:8s} | "
             f"observacion: {observacion} | creencia: {creencia:.3f} | "
@@ -125,3 +135,4 @@ if __name__ == "__main__":
         )
 
     print(f"\nMarcador final del agente sano: {marcador:+.1f}")
+    print(f"Ensayos guardados en el historial: {len(historial_creencia)}")

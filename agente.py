@@ -137,43 +137,71 @@ if __name__ == "__main__":
         costo_de_evitacion=0.5,            # Precio de jugar a lo seguro cada vez que evita.
     )
 
-    # Corremos la simulación del agente sano y recogemos sus tres historiales.
-    historial_creencia, historial_decision, historial_marcador = simular(
+    # Corremos la simulación del agente SANO y recogemos sus tres historiales.
+    historial_creencia_sano, historial_decision_sano, historial_marcador_sano = simular(
         agente_sano,
         observaciones,
         recompensa_por_explorar_seguro,
         castigo_por_explorar_peligro,
     )
 
-    marcador_final = historial_marcador[-1]   # el último valor de la lista = el total acumulado
-    print(f"Marcador final del agente sano: {marcador_final:+.1f}")
-    print(f"Ensayos guardados en el historial: {len(historial_creencia)}")
+    # El agente ANSIOSO: la MISMA clase Agente, solo cambian los parámetros.
+    agente_ansioso = Agente(
+        creencia_inicial_amenaza=0.7,      # Arranca temeroso (prior de peligro alto).
+        tasa_aprendizaje_amenaza=0.4,      # Aprende el peligro rápido.
+        tasa_aprendizaje_seguridad=0.15,   # Aprende la seguridad lento: el miedo tarda en bajar.
+        tolerancia_a_incertidumbre=0.25,   # Poco tolerante: siente el peligro más grande (pesimismo 1.75).
+        costo_de_evitacion=0.5,            # MISMO costo que el sano (para una comparación justa).
+    )
+
+    # Corremos al ANSIOSO sobre EL MISMO mundo (las mismas observaciones).
+    historial_creencia_ansioso, historial_decision_ansioso, historial_marcador_ansioso = simular(
+        agente_ansioso,
+        observaciones,
+        recompensa_por_explorar_seguro,
+        castigo_por_explorar_peligro,
+    )
+
+    # Comparación numérica: marcador final y cuántas veces evitó cada uno.
+    marcador_final_sano = historial_marcador_sano[-1]
+    marcador_final_ansioso = historial_marcador_ansioso[-1]
+    evitaciones_sano = historial_decision_sano.count("evitar")
+    evitaciones_ansioso = historial_decision_ansioso.count("evitar")
+
+    print(f"Agente SANO    -> marcador: {marcador_final_sano:+.1f} | evitó {evitaciones_sano} de {numero_de_ensayos} veces")
+    print(f"Agente ANSIOSO -> marcador: {marcador_final_ansioso:+.1f} | evitó {evitaciones_ansioso} de {numero_de_ensayos} veces")
 
     # -----------------------------------------------------------------------
-    # Gráficas: dibujamos el historial guardado con matplotlib.
+    # Gráfica comparativa: los dos agentes en los mismos ejes.
     # -----------------------------------------------------------------------
     ensayos = range(1, numero_de_ensayos + 1)   # eje horizontal: 1, 2, ..., 100
 
-    # Una figura con 2 paneles apilados (2 filas, 1 columna).
+    # Colores validados como seguros para daltonismo (azul sano / morado ansioso).
+    color_sano = "#0072B2"
+    color_ansioso = "#762A83"
+
     figura, (panel_miedo, panel_marcador) = plt.subplots(2, 1, figsize=(10, 8))
 
-    # Panel de arriba: el termómetro del miedo (la creencia) ensayo a ensayo.
-    panel_miedo.plot(ensayos, historial_creencia, color="steelblue", label="Creencia de amenaza")
+    # Panel de arriba: el termómetro del miedo de AMBOS agentes.
+    panel_miedo.plot(ensayos, historial_creencia_sano, color=color_sano, label="Sano")
+    panel_miedo.plot(ensayos, historial_creencia_ansioso, color=color_ansioso, label="Ansioso")
     panel_miedo.axhline(peligrosidad_real, color="gray", linestyle="--", label="Peligrosidad real (0.2)")
-    panel_miedo.set_title("Agente sano: cómo evoluciona el miedo")
+    panel_miedo.set_title("Cómo evoluciona el miedo: sano vs. ansioso")
     panel_miedo.set_ylabel("Creencia de amenaza (0 a 1)")
     panel_miedo.set_ylim(0, 1)
     panel_miedo.legend()
     panel_miedo.grid(True, alpha=0.3)
 
-    # Panel de abajo: el marcador acumulado ensayo a ensayo.
-    panel_marcador.plot(ensayos, historial_marcador, color="seagreen")
+    # Panel de abajo: el marcador acumulado de AMBOS agentes.
+    panel_marcador.plot(ensayos, historial_marcador_sano, color=color_sano, label="Sano")
+    panel_marcador.plot(ensayos, historial_marcador_ansioso, color=color_ansioso, label="Ansioso")
     panel_marcador.axhline(0, color="gray", linestyle="--")   # línea de referencia en cero
-    panel_marcador.set_title("Agente sano: marcador acumulado")
+    panel_marcador.set_title("Marcador acumulado: sano vs. ansioso")
     panel_marcador.set_xlabel("Ensayo")
     panel_marcador.set_ylabel("Puntaje acumulado")
+    panel_marcador.legend()
     panel_marcador.grid(True, alpha=0.3)
 
     figura.tight_layout()                 # acomoda los paneles para que no se encimen
-    figura.savefig("agente_sano.png", dpi=120)
-    print("Grafica guardada en: agente_sano.png")
+    figura.savefig("comparacion.png", dpi=120)
+    print("Grafica comparativa guardada en: comparacion.png")

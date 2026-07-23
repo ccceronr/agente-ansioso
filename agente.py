@@ -73,8 +73,43 @@ class Agente:
             return "evitar"
 
 
+def simular(agente, observaciones, recompensa_por_explorar_seguro, castigo_por_explorar_peligro):
+    """Corre la simulación completa de UN agente sobre una secuencia de observaciones.
+
+    Devuelve tres listas con el historial: la creencia, la decisión y el
+    marcador acumulado en cada ensayo.
+    """
+    marcador = 0.0
+    historial_creencia = []
+    historial_decision = []
+    historial_marcador = []
+
+    for observacion in observaciones:
+        # 1. El agente decide con lo que cree AHORA (antes de ver la observación).
+        decision = agente.decidir(recompensa_por_explorar_seguro, castigo_por_explorar_peligro)
+        # 2. Aprende de lo que el mundo le mostró y ajusta su termómetro.
+        creencia = agente.actualizar_creencia(observacion)
+
+        # 3. Reparte los puntos de esta asomada según lo que hizo y lo que había.
+        if decision == "evitar":
+            puntos = -agente.costo_de_evitacion
+        elif observacion == 0:
+            puntos = recompensa_por_explorar_seguro
+        else:
+            puntos = castigo_por_explorar_peligro
+
+        marcador = marcador + puntos
+
+        # 4. Anota el historial de este ensayo.
+        historial_creencia.append(creencia)
+        historial_decision.append(decision)
+        historial_marcador.append(marcador)
+
+    return historial_creencia, historial_decision, historial_marcador
+
+
 # ---------------------------------------------------------------------------
-# Simulación de la Fase 3: el agente sano aprende, decide Y guarda su historial.
+# Simulación de la Fase 5a: la misma corrida, ahora a través de la función simular().
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     # Generador de números aleatorios con "semilla" fija: garantiza que la
@@ -88,6 +123,12 @@ if __name__ == "__main__":
     recompensa_por_explorar_seguro = 1.0    # Exploró y estaba seguro: premio.
     castigo_por_explorar_peligro = -1.0     # Exploró y había peligro: susto.
 
+    # Generamos UNA secuencia de observaciones que enfrentarán los agentes,
+    # para que el mundo sea idéntico y la comparación sea justa.
+    observaciones = []
+    for _ in range(numero_de_ensayos):
+        observaciones.append(1 if generador.random() < peligrosidad_real else 0)
+
     agente_sano = Agente(
         creencia_inicial_amenaza=0.5,      # Prior neutral: "no sé, 50/50".
         tasa_aprendizaje_amenaza=0.3,      # Aprende el peligro a velocidad moderada.
@@ -96,46 +137,16 @@ if __name__ == "__main__":
         costo_de_evitacion=0.5,            # Precio de jugar a lo seguro cada vez que evita.
     )
 
-    marcador = 0.0    # El "puntaje" acumulado del robot; empieza en cero.
+    # Corremos la simulación del agente sano y recogemos sus tres historiales.
+    historial_creencia, historial_decision, historial_marcador = simular(
+        agente_sano,
+        observaciones,
+        recompensa_por_explorar_seguro,
+        castigo_por_explorar_peligro,
+    )
 
-    # Cuadernos (listas) vacíos para anotar el historial, un renglón por ensayo.
-    historial_creencia = []     # el termómetro del miedo en cada ensayo
-    historial_decision = []     # "explorar" o "evitar" en cada ensayo
-    historial_marcador = []     # el puntaje acumulado en cada ensayo
-
-    for ensayo in range(numero_de_ensayos):
-        # 1. El robot decide con lo que cree AHORA (antes de ver qué había).
-        decision = agente_sano.decidir(
-            recompensa_por_explorar_seguro,
-            castigo_por_explorar_peligro,
-        )
-        # 2. El mundo revela lo que había: peligro (1) con probabilidad 0.2.
-        observacion = 1 if generador.random() < peligrosidad_real else 0
-        # 3. El robot aprende de lo que vio y ajusta su termómetro.
-        creencia = agente_sano.actualizar_creencia(observacion)
-
-        # 4. Repartimos los puntos de esta asomada según lo que hizo y lo que había.
-        if decision == "evitar":
-            puntos = -agente_sano.costo_de_evitacion          # Evitó: paga su precio, pase lo que pase.
-        elif observacion == 0:
-            puntos = recompensa_por_explorar_seguro           # Exploró y estaba seguro: premio.
-        else:
-            puntos = castigo_por_explorar_peligro             # Exploró y había peligro: susto.
-
-        marcador = marcador + puntos
-
-        # 5. Anotamos en los cuadernos los datos de este ensayo (para graficar luego).
-        historial_creencia.append(creencia)
-        historial_decision.append(decision)
-        historial_marcador.append(marcador)
-
-        print(
-            f"Ensayo {ensayo + 1:3d} | decision: {decision:8s} | "
-            f"observacion: {observacion} | creencia: {creencia:.3f} | "
-            f"puntos: {puntos:+.1f} | marcador: {marcador:+.1f}"
-        )
-
-    print(f"\nMarcador final del agente sano: {marcador:+.1f}")
+    marcador_final = historial_marcador[-1]   # el último valor de la lista = el total acumulado
+    print(f"Marcador final del agente sano: {marcador_final:+.1f}")
     print(f"Ensayos guardados en el historial: {len(historial_creencia)}")
 
     # -----------------------------------------------------------------------
